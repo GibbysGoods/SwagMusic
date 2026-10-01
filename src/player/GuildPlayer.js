@@ -6,25 +6,17 @@ export class GuildPlayer {
         this.guildId = interaction.guildId;
         this.voiceChannelId = interaction.member.voice.channelId;
         this.textChannelId = interaction.channelId;
-
         this.lavalinkPlayer = null;
-
         this.queue = new Queue();
-
         this.currentTrack = null;
-
         this.volume = 100;
         this.repeatMode = 'off';
         this.paused = false;
         this.destroyed = false;
-
         this.emptyChannelTimer = null;
-
         this.endAction = 'continue';
-
         this.history = [];
         this.maxHistorySize = 25;
-
         this.goingBack = false;
     }
 
@@ -117,7 +109,6 @@ export class GuildPlayer {
             });
 
             this.goingBack = false;
-
         } catch (error) {
             console.error(
                 `[QUEUE] ${this.guildId}: failed to play "${nextTrack.info.title}"`,
@@ -133,6 +124,70 @@ export class GuildPlayer {
             throw error;
         }
     }
+
+    async pause() {
+        if (
+            !this.lavalinkPlayer ||
+            !this.currentTrack
+        ) {
+            return false;
+        }
+
+        try {
+            if (this.paused) {
+                console.log(
+                    `[PLAYER] ${this.guildId}: resuming playback`
+                );
+
+                await this.lavalinkPlayer.resume();
+
+                this.paused = false;
+            } else {
+                console.log(
+                    `[PLAYER] ${this.guildId}: pausing playback`
+                );
+
+                await this.lavalinkPlayer.pause();
+
+                this.paused = true;
+            }
+
+            if (this.client.playerPanel) {
+                await this.client.playerPanel.update(this);
+            }
+
+            return true;
+        } catch (error) {
+            console.error(
+                `[PLAYER] ${this.guildId}: Lavalink pause/resume failed`,
+                error
+            );
+
+            throw error;
+        }
+    }
+
+
+    move(fromIndex, toIndex) {
+        if (
+            !Number.isInteger(fromIndex) ||
+            !Number.isInteger(toIndex)
+        ) {
+            return null;
+        }
+
+        if (
+            fromIndex < 0 ||
+            fromIndex >= this.queue.size ||
+            toIndex < 0 ||
+            toIndex >= this.queue.size
+        ) {
+            return null;
+        }
+
+        return this.queue.move(fromIndex, toIndex);
+    }
+
 
     /*
      * --------------------------------------------------
@@ -168,7 +223,6 @@ export class GuildPlayer {
         this.endAction = 'stop';
 
         try {
-
             /*
              * Stop the current Lavalink playback.
              */
@@ -184,9 +238,7 @@ export class GuildPlayer {
             this.endAction = 'continue';
 
             return true;
-
         } catch (error) {
-
             this.endAction = 'continue';
 
             console.error(
@@ -272,7 +324,6 @@ export class GuildPlayer {
             this.goingBack = false;
 
             return true;
-
         } catch (error) {
             this.history.push(
                 previousTrack

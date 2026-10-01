@@ -15,6 +15,18 @@ export class Queue {
         return this.tracks.splice(index, 1)[0];
     }
 
+    move(fromIndex, toIndex) {
+        const [track] = this.tracks.splice(fromIndex, 1)
+
+        if (!track) {
+            return null
+        }
+
+        this.tracks.splice(toIndex, 0, track)
+
+        return track
+    }
+
     clear() {
         this.tracks = [];
     }

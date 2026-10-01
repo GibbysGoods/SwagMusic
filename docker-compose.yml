@@ -1,12 +1,16 @@
 services:
-  lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:latest
-    container_name: discord-music-lavalink
+  postgres:
+    image: postgres:18
+    container_name: discord-music-postgres
     restart: unless-stopped
     environment:
-      - _JAVA_OPTIONS=-Xmx1G
+      POSTGRES_DB: musicbot
+      POSTGRES_USER: musicbot
+      POSTGRES_PASSWORD: musicbot-dev-password
     volumes:
-      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+      - postgres_data:/var/lib/postgresql
     ports:
-      - "2333:2333"
+      - "5432:5432"
 
+volumes:
+  postgres_data:

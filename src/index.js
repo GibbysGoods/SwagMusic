@@ -1,19 +1,22 @@
 import 'dotenv/config';
 
-import { createLavalinkManager } from './services/LavalinkService.js';
 import { PlayerManager } from './player/PlayerManager.js';
+import { startInternalApi } from './services/InternalApi.js';
+import { createLavalinkManager } from './services/LavalinkService.js';
 import { PlayerPanel } from './services/PlayerPanel.js';
 
 import {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     Client,
-    GatewayIntentBits,
     Collection,
     Events,
+    GatewayIntentBits,
+    MessageFlags,
     ModalBuilder,
     TextInputBuilder,
-    TextInputStyle,
-    ActionRowBuilder,
-    MessageFlags
+    TextInputStyle
 } from 'discord.js';
 
 import fs from 'node:fs';
@@ -141,9 +144,14 @@ client.once(
         await client.lavalink.init({
             ...readyClient.user
         });
-
+        
         client.playerManager =
             new PlayerManager(
+                client
+            );
+
+        client.internalApi =
+            startInternalApi(
                 client
             );
 
@@ -165,13 +173,22 @@ client.on(
     Events.InteractionCreate,
     async interaction => {
 
-    	console.log('[INTERACTION]', {
-    	    id: interaction.id,
-    	    commandName: interaction.isChatInputCommand() ? interaction.commandName : undefined,
-    	    commandId: interaction.isChatInputCommand() ? interaction.commandId : undefined,
-    	    applicationId: interaction.applicationId,
-    	    guildId: interaction.guildId
-    	});
+        console.log('[INTERACTION]', {
+            id: interaction.id,
+            commandName:
+                interaction.isChatInputCommand()
+                    ? interaction.commandName
+                    : undefined,
+            commandId:
+                interaction.isChatInputCommand()
+                    ? interaction.commandId
+                    : undefined,
+            applicationId:
+                interaction.applicationId,
+            guildId:
+                interaction.guildId
+        });
+
 
         /*
          * ==================================================
@@ -198,6 +215,7 @@ client.on(
                         interaction.guildId
                     );
 
+
                 if (
                     !guildPlayer?.lavalinkPlayer
                 ) {
@@ -208,13 +226,16 @@ client.on(
                         flags: MessageFlags.Ephemeral
                     });
 
+
                     setTimeout(
                         async () => {
+
                             try {
                                 await interaction.deleteReply();
                             } catch {
                                 // Already gone.
                             }
+
                         },
                         10_000
                     );
@@ -222,9 +243,11 @@ client.on(
                     return;
                 }
 
+
                 await interaction.deferReply({
                     flags: MessageFlags.Ephemeral
                 });
+
 
                 try {
 
@@ -236,6 +259,7 @@ client.on(
                                 interaction.user
                             );
 
+
                     if (
                         !result.tracks ||
                         result.tracks.length === 0
@@ -245,13 +269,16 @@ client.on(
                             `❌ No results found for **${query}**.`
                         );
 
+
                         setTimeout(
                             async () => {
+
                                 try {
                                     await interaction.deleteReply();
                                 } catch {
                                     // Already gone.
                                 }
+
                             },
                             10_000
                         );
@@ -259,15 +286,18 @@ client.on(
                         return;
                     }
 
+
                     const track =
                         result.tracks[0];
 
                     const wasPlaying =
                         guildPlayer.currentTrack !== null;
 
+
                     await guildPlayer.addTrack(
                         track
                     );
+
 
                     if (
                         client.playerPanel
@@ -278,29 +308,41 @@ client.on(
                         );
                     }
 
+
+                    /*
+                     * Only show a notification when the track
+                     * was actually added to an existing queue.
+                     *
+                     * The first track does not need a message
+                     * because the player panel already shows it.
+                     */
+
                     if (wasPlaying) {
 
                         await interaction.editReply(
                             `🎵 Added **${track.info.title}** by **${track.info.author}** to the queue.`
                         );
 
+
+                        setTimeout(
+                            async () => {
+
+                                try {
+                                    await interaction.deleteReply();
+                                } catch {
+                                    // Already gone.
+                                }
+
+                            },
+                            5_000
+                        );
+
                     } else {
 
-                        await interaction.editReply(
-                            `🎵 Playing **${track.info.title}** by **${track.info.author}**.`
-                        );
+                        await interaction.deleteReply().catch(() => {});
+
                     }
 
-                    setTimeout(
-                        async () => {
-                            try {
-                                await interaction.deleteReply();
-                            } catch {
-                                // Already gone.
-                            }
-                        },
-                        5_000
-                    );
 
                 } catch (error) {
 
@@ -309,21 +351,27 @@ client.on(
                         error
                     );
 
+
                     try {
+
                         await interaction.editReply(
                             '❌ Something went wrong while trying to add that track.'
                         );
+
                     } catch {
                         // Interaction may already be unavailable.
                     }
 
+
                     setTimeout(
                         async () => {
+
                             try {
                                 await interaction.deleteReply();
                             } catch {
                                 // Already gone.
                             }
+
                         },
                         10_000
                     );
@@ -366,6 +414,7 @@ client.on(
                             'Add music'
                         );
 
+
                 const queryInput =
                     new TextInputBuilder()
                         .setCustomId(
@@ -387,28 +436,190 @@ client.on(
                             500
                         );
 
+
                 const row =
                     new ActionRowBuilder()
                         .addComponents(
                             queryInput
                         );
 
+
                 modal.addComponents(
                     row
                 );
+
 
                 console.log('[ADD DEBUG] Before showModal:', {
                     id: interaction.id,
                     replied: interaction.replied,
                     deferred: interaction.deferred,
-                    acknowledged: interaction.replied || interaction.deferred
+                    acknowledged:
+                        interaction.replied ||
+                        interaction.deferred
                 });
-                
+
+
                 await interaction.showModal(
                     modal
                 );
-                
-                console.log('[ADD DEBUG] showModal succeeded');
+
+
+                console.log(
+                    '[ADD DEBUG] showModal succeeded'
+                );
+
+                return;
+            }
+
+
+            /*
+             * --------------------------------------------------
+             * PAUSE / RESUME
+             * --------------------------------------------------
+             */
+
+            if (
+                interaction.customId ===
+                'player_pause'
+            ) {
+
+                const guildPlayer =
+                    client.playerManager?.get(
+                        interaction.guildId
+                    );
+
+
+                if (
+                    !guildPlayer?.lavalinkPlayer ||
+                    !guildPlayer.currentTrack
+                ) {
+
+                    await interaction.reply({
+                        content:
+                            '❌ Nothing is currently playing.',
+                        flags:
+                            MessageFlags.Ephemeral
+                    });
+
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone.
+                            }
+
+                        },
+                        10_000
+                    );
+
+                    return;
+                }
+
+
+                const player =
+                    guildPlayer.lavalinkPlayer;
+
+
+                try {
+
+                    if (
+                        guildPlayer.paused
+                    ) {
+
+                        await player.resume();
+
+                        guildPlayer.paused =
+                            false;
+
+                    } else {
+
+                        await player.pause();
+
+                        guildPlayer.paused =
+                            true;
+                    }
+
+
+                    /*
+                     * Update the persistent player
+                     * panel so the button changes
+                     * between Pause and Resume.
+                     */
+
+                    if (
+                        client.playerPanel
+                    ) {
+
+                        try {
+
+                            await client.playerPanel.update(
+                                guildPlayer
+                            );
+
+                        } catch (error) {
+
+                            console.error(
+                                '[PANEL] Failed to update panel after pause/resume:',
+                                error
+                            );
+                        }
+                    }
+
+
+                    /*
+                     * A button interaction still needs to be
+                     * acknowledged, but we don't send a visible
+                     * confirmation message.
+                     */
+
+                    await interaction.deferUpdate();
+
+
+                } catch (error) {
+
+                    console.error(
+                        '[PANEL] Pause/resume failed:',
+                        error
+                    );
+
+
+                    /*
+                     * Send an error only if the interaction
+                     * has not already been acknowledged.
+                     */
+
+                    try {
+
+                        if (
+                            interaction.replied ||
+                            interaction.deferred
+                        ) {
+
+                            await interaction.followUp({
+                                content:
+                                    '❌ Failed to pause/resume the current track.',
+                                flags:
+                                    MessageFlags.Ephemeral
+                            });
+
+                        } else {
+
+                            await interaction.reply({
+                                content:
+                                    '❌ Failed to pause/resume the current track.',
+                                flags:
+                                    MessageFlags.Ephemeral
+                            });
+                        }
+
+                    } catch {
+                        // Interaction may already be unavailable.
+                    }
+
+                }
 
                 return;
             }
@@ -430,6 +641,7 @@ client.on(
                         interaction.guildId
                     );
 
+
                 if (
                     !guildPlayer?.lavalinkPlayer ||
                     !guildPlayer.currentTrack
@@ -438,16 +650,20 @@ client.on(
                     await interaction.reply({
                         content:
                             '❌ Nothing is currently playing.',
-                        flags: MessageFlags.Ephemeral
+                        flags:
+                            MessageFlags.Ephemeral
                     });
+
 
                     setTimeout(
                         async () => {
+
                             try {
                                 await interaction.deleteReply();
                             } catch {
                                 // Already gone.
                             }
+
                         },
                         10_000
                     );
@@ -455,12 +671,16 @@ client.on(
                     return;
                 }
 
+
                 const skippedTrack =
                     guildPlayer.currentTrack;
 
+
                 await interaction.deferReply({
-                    flags: MessageFlags.Ephemeral
+                    flags:
+                        MessageFlags.Ephemeral
                 });
+
 
                 try {
 
@@ -471,20 +691,25 @@ client.on(
 
                     await guildPlayer.skip();
 
+
                     await interaction.editReply(
                         `⏭️ Skipped **${skippedTrack.info.title}**`
                     );
 
+
                     setTimeout(
                         async () => {
+
                             try {
                                 await interaction.deleteReply();
                             } catch {
                                 // Already gone.
                             }
+
                         },
                         5_000
                     );
+
 
                 } catch (error) {
 
@@ -493,24 +718,153 @@ client.on(
                         error
                     );
 
+
                     try {
+
                         await interaction.editReply(
                             '❌ Failed to skip the current track.'
                         );
+
                     } catch {
                         // Interaction may already be unavailable.
                     }
 
+
                     setTimeout(
                         async () => {
+
                             try {
                                 await interaction.deleteReply();
                             } catch {
                                 // Already gone.
                             }
+
                         },
                         10_000
                     );
+                }
+
+                return;
+            }
+
+
+            /*
+             * --------------------------------------------------
+             * STOP BUTTON
+             * --------------------------------------------------
+             *
+             * The main Stop button opens a confirmation prompt.
+             * The confirmation is tied to the user who clicked it.
+             * --------------------------------------------------
+             */
+
+            if (
+                interaction.customId ===
+                'player_stop'
+            ) {
+
+                const guildPlayer =
+                    client.playerManager?.get(
+                        interaction.guildId
+                    );
+
+
+                if (
+                    !guildPlayer?.lavalinkPlayer ||
+                    !guildPlayer.currentTrack
+                ) {
+
+                    await interaction.reply({
+                        content:
+                            '❌ Nothing is currently playing.',
+                        flags:
+                            MessageFlags.Ephemeral
+                    });
+
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone.
+                            }
+
+                        },
+                        10_000
+                    );
+
+                    return;
+                }
+
+
+                const confirmButton =
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `stop_confirm:${interaction.user.id}`
+                        )
+                        .setEmoji('⏹️')
+                        .setLabel('Stop')
+                        .setStyle(
+                            ButtonStyle.Danger
+                        );
+
+
+                const cancelButton =
+                    new ButtonBuilder()
+                        .setCustomId(
+                            `stop_cancel:${interaction.user.id}`
+                        )
+                        .setLabel('Cancel')
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        );
+
+
+                const row =
+                    new ActionRowBuilder()
+                        .addComponents(
+                            confirmButton,
+                            cancelButton
+                        );
+
+
+                try {
+
+                    await interaction.reply({
+                        content:
+                            '⏹️ **Stop playback and clear the queue?**',
+                        components: [row],
+                        flags: MessageFlags.Ephemeral
+                    });
+
+
+                    /*
+                     * The confirmation prompt is only useful briefly.
+                     * Remove it after 5 seconds if it has not been used.
+                     */
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone or already handled.
+                            }
+
+                        },
+                        5_000
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        '[PANEL] Failed to show stop confirmation:',
+                        error
+                    );
+
                 }
 
                 return;
@@ -538,6 +892,7 @@ client.on(
                 ] =
                     interaction.customId.split(':');
 
+
                 if (
                     interaction.user.id !==
                     userId
@@ -546,22 +901,27 @@ client.on(
                     await interaction.reply({
                         content:
                             '❌ Only the person who started this confirmation can use these buttons.',
-                        flags: MessageFlags.Ephemeral
+                        flags:
+                            MessageFlags.Ephemeral
                     });
+
 
                     setTimeout(
                         async () => {
+
                             try {
                                 await interaction.deleteReply();
                             } catch {
                                 // Already gone.
                             }
+
                         },
                         10_000
                     );
 
                     return;
                 }
+
 
                 if (
                     action ===
@@ -574,16 +934,33 @@ client.on(
                         components: []
                     });
 
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone.
+                            }
+
+                        },
+                        5_000
+                    );
+
                     return;
                 }
+
 
                 const guildPlayer =
                     client.playerManager?.get(
                         interaction.guildId
                     );
 
+
                 if (
-                    !guildPlayer?.lavalinkPlayer
+                    !guildPlayer?.lavalinkPlayer ||
+                    !guildPlayer.currentTrack
                 ) {
 
                     await interaction.update({
@@ -592,25 +969,98 @@ client.on(
                         components: []
                     });
 
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone.
+                            }
+
+                        },
+                        10_000
+                    );
+
                     return;
                 }
 
-                await guildPlayer.stop();
 
-                if (
-                    client.playerPanel
-                ) {
+                try {
 
-                    await client.playerPanel.update(
-                        guildPlayer
+                    await guildPlayer.stop();
+
+
+                    if (
+                        client.playerPanel
+                    ) {
+
+                        await client.playerPanel.update(
+                            guildPlayer
+                        );
+                    }
+
+
+                    await interaction.update({
+                        content:
+                            '⏹️ **Playback stopped and the queue was cleared.**',
+                        components: []
+                    });
+
+
+                    /*
+                     * Successful confirmation disappears
+                     * after 5 seconds.
+                     */
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone.
+                            }
+
+                        },
+                        5_000
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        '[PANEL] Stop failed:',
+                        error
+                    );
+
+
+                    try {
+
+                        await interaction.update({
+                            content:
+                                '❌ Failed to stop playback.',
+                            components: []
+                        });
+
+                    } catch {
+                        // Interaction may already be unavailable.
+                    }
+
+
+                    setTimeout(
+                        async () => {
+
+                            try {
+                                await interaction.deleteReply();
+                            } catch {
+                                // Already gone.
+                            }
+
+                        },
+                        10_000
                     );
                 }
-
-                await interaction.update({
-                    content:
-                        '⏹️ **Playback stopped and the queue was cleared.**',
-                    components: []
-                });
 
                 return;
             }
@@ -638,10 +1088,12 @@ client.on(
             return;
         }
 
+
         const command =
             client.commands.get(
                 interaction.commandName
             );
+
 
         if (!command) {
 
@@ -651,6 +1103,7 @@ client.on(
 
             return;
         }
+
 
         try {
 
@@ -666,8 +1119,10 @@ client.on(
                 error
             );
 
+
             const message =
                 'There was an error executing this command.';
+
 
             /*
              * The command may have already acknowledged the
@@ -685,15 +1140,19 @@ client.on(
                 ) {
 
                     await interaction.followUp({
-                        content: message,
-                        flags: MessageFlags.Ephemeral
+                        content:
+                            message,
+                        flags:
+                            MessageFlags.Ephemeral
                     });
 
                 } else {
 
                     await interaction.reply({
-                        content: message,
-                        flags: MessageFlags.Ephemeral
+                        content:
+                            message,
+                        flags:
+                            MessageFlags.Ephemeral
                     });
                 }
 
@@ -726,13 +1185,16 @@ client.on(
             return;
         }
 
+
         const guildId =
             oldState.guild.id;
+
 
         const guildPlayer =
             client.playerManager?.get(
                 guildId
             );
+
 
         if (
             !guildPlayer?.lavalinkPlayer
@@ -740,14 +1202,17 @@ client.on(
             return;
         }
 
+
         const botVoiceChannel =
             oldState.guild.channels.cache.get(
                 guildPlayer.voiceChannelId
             );
 
+
         if (!botVoiceChannel) {
             return;
         }
+
 
         if (
             oldState.channelId !==
@@ -758,11 +1223,13 @@ client.on(
             return;
         }
 
+
         const humansInChannel =
             botVoiceChannel.members.filter(
                 member =>
                     !member.user.bot
             );
+
 
         if (
             humansInChannel.size === 0
@@ -794,6 +1261,7 @@ client.on(
             return;
         }
 
+
         if (
             packet.t ===
                 'VOICE_STATE_UPDATE' ||
@@ -805,6 +1273,7 @@ client.on(
                 `[VOICE] ${packet.t}`
             );
         }
+
 
         client.lavalink.sendRawData(
             packet
