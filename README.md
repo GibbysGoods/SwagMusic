@@ -1,6 +1,6 @@
 # 🎵 SwagMusic
 
-**An open-source, self-hosted music platform for Discord, powered by a bot and web interface.**
+**An open-source, self-hosted music platform for Discord.**
 
 SwagMusic brings music playback, playlist management, and collaborative listening together in one self-hosted application. Run your own instance, invite the bot to multiple Discord servers, and manage your music through a dedicated web interface.
 
