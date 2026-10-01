@@ -42,6 +42,7 @@ SwagMusic is actively being developed, with the following features planned:
 - [ ] **Server-Based Playlists** — Shared playlists that members of a Discord server can create, manage, and enjoy together.
 - [ ] **Desktop Application** — A desktop client capable of hosting or connecting to the web interface, with integration for native media controls such as play/pause keys.
 - [ ] **Documentation** — Comprehensive installation, configuration, deployment, and usage guides.
+- [ ] **Search Filtering** — Options to filter out "Official Video" tagged content to avoid music interruptions in playback.
 
 ---
 
