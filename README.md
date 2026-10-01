@@ -45,7 +45,7 @@ SwagMusic is actively being developed, with the following features planned:
 
 ---
 
-## Technology Stack
+## Tech Stack
 
 | Component | Technology |
 |---|---|
