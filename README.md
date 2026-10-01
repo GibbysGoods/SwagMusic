@@ -12,6 +12,9 @@ Deploy and host on your server using Docker Compose and you can use the bot in a
 _____________________________________
 
 ### Planned features-
--improved UI with nicer 'Now Playing' section and playlist management
+-improved UI with nicer 'Now Playing' section and playlist management 
+
 -per-server playlists that you and your friends can collaborate on
+
 -desktop app that can server the web UI and also unify your Windows media controls like play/pause keys
+
