@@ -1,6 +1,8 @@
 # SwagMusic
 Open source, super suite for collaborative music playback by means of a Discord bot.
 
+_____________________________________
+### Features-
 Discord bot and Web app created with Node.js, using Lavalink for music handling.
 
 Full PostreSQL database and Discord OAuth for user playlists and per-server collaborative playlists in the future.
