@@ -18,15 +18,19 @@ SwagMusic brings music playback, playlist management, and collaborative listenin
 
 ---
 
-## Screenshots
+## 🖥️ Screenshots
 
 ### Web Interface
 
-<img width="1211" alt="SwagMusic web interface" src="https://github.com/user-attachments/assets/c50bef37-d86b-41fc-8297-8ac392e780ee" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c50bef37-d86b-41fc-8297-8ac392e780ee" width="650" alt="SwagMusic web interface" />
+</p>
 
-### Additional UI
+### Discord Bot
 
-<img width="426" alt="SwagMusic interface preview" src="https://github.com/user-attachments/assets/43eacc8f-0626-4f1d-98b3-18342e952a00" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/43eacc8f-0626-4f1d-98b3-18342e952a00" width="350" alt="SwagMusic interface preview" />
+</p>
 
 ---
 
