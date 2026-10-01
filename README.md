@@ -1,27 +1,67 @@
-# SwagMusic
-Open source, super suite for collaborative music playback by means of a Discord bot.
+# 🎵 SwagMusic
 
-_____________________________________
-### Features-
-Discord bot and Web app created with Node.js, using Lavalink for music handling.
+**An open-source, self-hosted music platform for Discord, powered by a bot and web interface.**
 
-Full PostreSQL database and Discord OAuth for user playlists and per-server collaborative playlists in the future.
+SwagMusic brings music playback, playlist management, and collaborative listening together in one self-hosted application. Run your own instance, invite the bot to multiple Discord servers, and manage your music through a dedicated web interface.
 
-Deploy and host on your server using Docker Compose and you can use the bot in all of you and your friends servers!
+---
 
-<img width="1211" height="1855" alt="image" src="https://github.com/user-attachments/assets/c50bef37-d86b-41fc-8297-8ac392e780ee" />
+## Features
 
-<img width="426" height="631" alt="image" src="https://github.com/user-attachments/assets/43eacc8f-0626-4f1d-98b3-18342e952a00" />
+- **Discord Music Bot** — Music playback powered by Node.js and Lavalink.
+- **Web Interface** — A dedicated browser-based UI for managing music and playlists.
+- **PostgreSQL Database** — Persistent storage for users and playlists.
+- **Discord OAuth2 Authentication** — Sign in using your Discord account.
+- **Personal Playlists** — Create, manage, and save your own playlists.
+- **Self-Hosted** — Deploy the application on your own hardware using Docker Compose.
+- **Multi-Server Support** — Designed to support music playback across multiple Discord servers from a single self-hosted instance.
 
+---
 
-_____________________________________
+## Screenshots
 
-### Planned features-
-- improved UI with nicer 'Now Playing' section and playlist management 
+### Web Interface
 
-- per-server playlists that you and your friends can collaborate on
+<img width="1211" alt="SwagMusic web interface" src="https://github.com/user-attachments/assets/c50bef37-d86b-41fc-8297-8ac392e780ee" />
 
-- desktop app that can server the web UI and also unify your Windows media controls like play/pause keys
+### Additional UI
 
-- proper documentation and setup instructions
+<img width="426" alt="SwagMusic interface preview" src="https://github.com/user-attachments/assets/43eacc8f-0626-4f1d-98b3-18342e952a00" />
 
+---
+
+## Roadmap
+
+SwagMusic is actively being developed, with the following features planned:
+
+- [ ] **UI Improvements** — A more refined Now Playing section, improved navigation, and enhanced playlist management.
+- [ ] **Server-Based Playlists** — Shared playlists that members of a Discord server can create, manage, and enjoy together.
+- [ ] **Desktop Application** — A desktop client capable of hosting or connecting to the web interface, with integration for native media controls such as play/pause keys.
+- [ ] **Documentation** — Comprehensive installation, configuration, deployment, and usage guides.
+
+---
+
+## Technology Stack
+
+| Component | Technology |
+|---|---|
+| Backend | Node.js |
+| Music Processing | Lavalink |
+| Database | PostgreSQL |
+| Authentication | Discord OAuth2 |
+| Deployment | Docker Compose |
+| Interface | Web Application |
+
+---
+
+## Self-Hosting
+
+SwagMusic is intended to be self-hosted on your own server, allowing you to run a single bot instance across multiple Discord communities.
+
+Deployment instructions and configuration documentation will be added as development progresses.
+
+---
+
+## License
+
+License information will be added as the project develops.
