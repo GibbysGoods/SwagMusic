@@ -18,7 +18,7 @@ SwagMusic brings music playback, playlist management, and collaborative listenin
 
 ---
 
-## 🖥️ Screenshots
+## Screenshots
 
 ### Web Interface
 
