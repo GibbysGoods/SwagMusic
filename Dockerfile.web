@@ -1,0 +1,29 @@
+
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+ARG VITE_DISCORD_GUILD_ID
+ENV VITE_DISCORD_GUILD_ID=$VITE_DISCORD_GUILD_ID
+
+COPY apps/web/package*.json ./
+
+RUN npm ci
+
+COPY apps/web/ ./
+
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY --from=build /app/dist ./dist
+COPY docker/static-server.mjs ./static-server.mjs
+
+ENV NODE_ENV=production
+ENV PORT=80
+
+EXPOSE 80
+
+CMD ["node", "static-server.mjs"]

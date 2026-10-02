@@ -2,6 +2,8 @@ import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import session from '@fastify/session'
 import Fastify from 'fastify'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { db } from './db.js'
 import authRoutes from './routes/auth.js'
 import {
@@ -20,6 +22,7 @@ import { PostgresSessionStore } from './session-store.js'
 
 const app = Fastify({
   logger: true,
+  trustProxy: true,
 })
 
 function requireUser(request, reply) {
@@ -33,6 +36,25 @@ function requireUser(request, reply) {
 
 await db.query('SELECT 1')
 console.log('[DB] PostgreSQL connection successful')
+
+const migrationScript = fileURLToPath(
+  new URL('./scripts/migrate.js', import.meta.url)
+)
+
+const migrationResult = spawnSync(
+  process.execPath,
+  [migrationScript],
+  {
+    stdio: 'inherit',
+    env: process.env,
+  }
+)
+
+if (migrationResult.status !== 0) {
+  throw new Error(
+    'Database migrations failed. API startup aborted.'
+  )
+}
 
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -69,7 +91,7 @@ await app.register(session, {
 
 await app.register(authRoutes)
 
-const BOT_API_URL = 'http://127.0.0.1:3001'
+const BOT_API_URL = process.env.BOT_API_URL ?? 'http://127.0.0.1:3001'
 
 app.get('/api/health', async () => {
   return {
@@ -820,6 +842,6 @@ app.post(
 )
 
 app.listen({
-  port: 3000,
-  host: '127.0.0.1',
+  port: Number(process.env.API_PORT ?? 3000),
+  host: process.env.API_HOST ?? '127.0.0.1',
 })

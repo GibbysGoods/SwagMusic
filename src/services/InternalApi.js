@@ -1,8 +1,8 @@
 import http from 'node:http'
 
-const PORT = 3001
+const PORT = Number(process.env.BOT_API_PORT ?? 3001)
 
-const HOST = '127.0.0.1'
+const HOST = process.env.BOT_API_HOST ?? '127.0.0.1'
 
 export function startInternalApi(client) {
     const server = http.createServer(async (request, response) => {
